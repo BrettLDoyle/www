@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+	
+	<style>
+		html, body {
+			margin: 0;
+			padding: 0;
+		}
+		canvas {
+			display: block;
+			
+			image-rendering: pixelated;
+		}
+	</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<script>
+var ctx = canvas.getContext('2d');
+
+var squareSize = 10;
+
+var width = Math.floor(window.innerWidth / squareSize);
+var height = Math.floor(window.innerHeight / squareSize);
+
+canvas.width = width;
+canvas.height = height;
+
+canvas.style.width = width * squareSize + 'px';
+canvas.style.height = height * squareSize + 'px';
+
+var grid = [];
+var ant = {
+	pos: [0, 0],
+	dir: [1, 0]
+};
+
+var x = 0;
+var y = 0;
+
+function reset() {
+	grid = [];
+	for (x = 0; x < width; x++) {
+		grid.push([]);
+		for (y = 0; y < height; y++) {
+			grid[x].push(false);
+		}
+	}
+	ant.pos = [Math.floor(width / 2), Math.floor(height / 2)];
+	ant.dir = [-1, 0];
+}
+
+reset();
+
+var offsets = [
+	[-1, -1],
+	[ 0, -1],
+	[ 1, -1],
+	[ 1,  0],
+	[ 1,  1],
+	[ 0,  1],
+	[ -1, 1],
+	[ -1, 0]
+];
+
+var id = ctx.createImageData(1, 1);
+id.data[3] = 255;
+
+var counter = 0;
+
+var newGrid = null;
+var count = 0;
+
+function draw() {
+	if (!grid[ant.pos[0]][ant.pos[1]]) {
+		//white
+		ant.dir = [-ant.dir[1], ant.dir[0]];
+	} else {
+		//black
+		ant.dir = [ant.dir[1], -ant.dir[0]];
+	}
+	grid[ant.pos[0]][ant.pos[1]] = !grid[ant.pos[0]][ant.pos[1]];
+	
+	//fill in the square
+	id.data[0] = id.data[1] = id.data[2] = grid[ant.pos[0]][ant.pos[1]] * 255;
+	ctx.putImageData(id, ant.pos[0], ant.pos[1]);
+	
+	
+	ant.pos[0] = (((ant.pos[0] + ant.dir[0]) % width) + width) % width;
+	ant.pos[1] = (((ant.pos[1] + ant.dir[1]) % height) + height) % height;
+	
+	if (counter % 3 == 0) {
+		newGrid = [];
+		for (x = 0; x < width; x++) {
+			newGrid.push([]);
+			for (y = 0; y < height; y++) {
+				count = 0;
+				offsets.forEach(function(off, test) {
+					count += grid[(((x + off[0]) % width) + width) % width][(((y + off[1]) % height) + height) % height];
+				});
+				if (grid[x][y] && (count < 2 || count > 3)) {
+					//kill alive cell
+					newGrid[x].push(false);
+				} else if (!grid[x][y] && count == 3) {
+					//create alive cell
+					newGrid[x].push(true);
+				} else {
+					newGrid[x].push(grid[x][y]);
+				}
+				id.data[0] = id.data[1] = id.data[2] = newGrid[x][y] * 255;
+				ctx.putImageData(id, x, y);
+			}
+		}
+		grid = newGrid;
+	}
+	id.data[0] = 255;
+	id.data[1] = id.data[2] = 0;
+	ctx.putImageData(id, ant.pos[0], ant.pos[1]);
+	
+	counter++;
+	requestAnimationFrame(draw);
+}
+
+requestAnimationFrame(draw);
+
+</script>
+</body>
+</html>
