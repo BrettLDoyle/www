@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<script>
+var ctx = canvas.getContext('2d');
+
+var width = 877;
+var height = 1240;
+
+canvas.width = width;
+canvas.height = height;
+
+var square_size = 15;
+
+ctx.rotate(45 * Math.PI / 180.0);
+
+for (var y = -square_size; y < height * 2; y += square_size) {
+	var offset = 0;
+	for (var x = 0; x < width * 2; x += square_size) {
+		var val = Math.floor(Math.random() * 255);
+		ctx.fillStyle = 'rgb(' + val + ',' + val + ',' + val + ')';
+		ctx.fillRect(x, y - offset, square_size + 1, square_size + 1);
+		offset += square_size;
+	}
+}
+
+</script>
+</body>
+</html>
