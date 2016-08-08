@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+}
+#canvas {
+  display: block;
+  image-rendering: pixelated;
+}
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<script>
+var ctx = canvas.getContext('2d');
+var width = 0;
+var height = 0;
+
+function onResize()
+{
+  width = canvas.width = window.innerWidth;
+  height = canvas.height = window.innerHeight;
+  render();
+}
+
+function render()
+{
+  ctx.putImageData(fillTexture(ctx.createImageData(width, height)), 0, 0);
+}
+/*
+From
+http://catlikecoding.com/unity/tutorials/noise/
+*/
+
+var sqr2 = Math.sqrt(2);
+
+function lerp(a, b, f)
+{
+  if (Array.isArray(a))
+  {
+    if (a.length == 2)
+    {
+      return [lerp(a[0], b[0], f), lerp(a[1], b[1], f)];
+    }
+    else if (a.length == 3)
+    {
+      return [lerp(a[0], b[0], f), lerp(a[1], b[1], f), lerp(a[2], b[2], f)];
+    }
+  }
+  else
+  {
+    return a * (1 - f) + b * f;
+  }
+}
+
+function smooth(t)
+{
+  return t * t * t * (t * (t * 6 - 15) + 10);
+}
+
+function dot(g, x, y)
+{
+  return g[0] * x + g[1] * y;
+}
+
+function length(vec)
+{
+  return Math.sqrt(dot(vec, vec[0], vec[1]));
+}
+
+function normalize(vec)
+{
+  var len = length(vec);
+  return [vec[0] / len, vec[1] / len];
+}
+
+var Noise = {
+  hash: [
+    151,160,137, 91, 90, 15,131, 13,201, 95, 96, 53,194,233,  7,225,
+		140, 36,103, 30, 69,142,  8, 99, 37,240, 21, 10, 23,190,  6,148,
+		247,120,234, 75,  0, 26,197, 62, 94,252,219,203,117, 35, 11, 32,
+		 57,177, 33, 88,237,149, 56, 87,174, 20,125,136,171,168, 68,175,
+		 74,165, 71,134,139, 48, 27,166, 77,146,158,231, 83,111,229,122,
+		 60,211,133,230,220,105, 92, 41, 55, 46,245, 40,244,102,143, 54,
+		 65, 25, 63,161,  1,216, 80, 73,209, 76,132,187,208, 89, 18,169,
+		200,196,135,130,116,188,159, 86,164,100,109,198,173,186,  3, 64,
+		 52,217,226,250,124,123,  5,202, 38,147,118,126,255, 82, 85,212,
+		207,206, 59,227, 47, 16, 58, 17,182,189, 28, 42,223,183,170,213,
+		119,248,152,  2, 44,154,163, 70,221,153,101,155,167, 43,172,  9,
+		129, 22, 39,253, 19, 98,108,110, 79,113,224,232,178,185,112,104,
+		218,246, 97,228,251, 34,242,193,238,210,144, 12,191,179,162,241,
+		 81, 51,145,235,249, 14,239,107, 49,192,214, 31,181,199,106,157,
+		184, 84,204,176,115,121, 50, 45,127,  4,150,254,138,236,205, 93,
+		222,114, 67, 29, 24, 72,243,141,128,195, 78, 66,215, 61,156,180,
+
+		151,160,137, 91, 90, 15,131, 13,201, 95, 96, 53,194,233,  7,225,
+		140, 36,103, 30, 69,142,  8, 99, 37,240, 21, 10, 23,190,  6,148,
+		247,120,234, 75,  0, 26,197, 62, 94,252,219,203,117, 35, 11, 32,
+		 57,177, 33, 88,237,149, 56, 87,174, 20,125,136,171,168, 68,175,
+		 74,165, 71,134,139, 48, 27,166, 77,146,158,231, 83,111,229,122,
+		 60,211,133,230,220,105, 92, 41, 55, 46,245, 40,244,102,143, 54,
+		 65, 25, 63,161,  1,216, 80, 73,209, 76,132,187,208, 89, 18,169,
+		200,196,135,130,116,188,159, 86,164,100,109,198,173,186,  3, 64,
+		 52,217,226,250,124,123,  5,202, 38,147,118,126,255, 82, 85,212,
+		207,206, 59,227, 47, 16, 58, 17,182,189, 28, 42,223,183,170,213,
+		119,248,152,  2, 44,154,163, 70,221,153,101,155,167, 43,172,  9,
+		129, 22, 39,253, 19, 98,108,110, 79,113,224,232,178,185,112,104,
+		218,246, 97,228,251, 34,242,193,238,210,144, 12,191,179,162,241,
+		 81, 51,145,235,249, 14,239,107, 49,192,214, 31,181,199,106,157,
+		184, 84,204,176,115,121, 50, 45,127,  4,150,254,138,236,205, 93,
+		222,114, 67, 29, 24, 72,243,141,128,195, 78, 66,215, 61,156,180
+  ],
+  gradients1D: [
+    1, -1
+  ],
+  gradientsMask1D: 1,
+  gradients2D: [
+    [ 1, 0],
+    [-1, 0],
+    [ 0, 1],
+    [ 0,-1],
+    normalize([ 1, 1]),
+    normalize([-1, 1]),
+    normalize([ 1,-1]),
+    normalize([-1,-1]),
+  ],
+  gradientsMask2D: 7,
+  hashMask: 255,
+  value1D: function(point, freq) {
+    var point = [point1[0] * freq, point1[1] * freq];
+    
+    var i0 = Math.floor(point[0]);
+    var t = point[0] - i0;
+    i0 &= this.hashMask;
+    var i1 = i0 + 1;
+    
+    var h0 = this.hash[i0];
+    var h1 = this.hash[i1];
+    
+    t = smooth(t);
+    
+    return lerp(h0, h1, t) * (1 / this.hashMask);
+  },
+  value2D: function(point1, freq) {
+    var point = [point1[0] * freq, point1[1] * freq];
+    
+    var ix0 = Math.floor(point[0]);
+    var iy0 = Math.floor(point[1]);
+    var tx = point[0] - ix0;
+    var ty = point[1] - iy0;
+    ix0 &= this.hashMask;
+    iy0 &= this.hashMask;
+    var ix1 = ix0 + 1;
+    var iy1 = iy0 + 1;
+    
+    var h0 = this.hash[ix0];
+    var h1 = this.hash[ix1];
+    var h00 = this.hash[h0 + iy0];
+    var h10 = this.hash[h1 + iy0];
+    var h01 = this.hash[h0 + iy1];
+    var h11 = this.hash[h1 + iy1];
+    
+    tx = smooth(tx);
+    ty = smooth(ty);
+    
+    return lerp(lerp(h00, h10, tx), lerp(h01, h11, tx), ty) * (1 / this.hashMask);
+  },
+  perlin1D: function(point, freq) {
+    var point = [point1[0] * freq, point1[1] * freq];
+    
+    var i0 = Math.floor(point[0]);
+    var t0 = point[0] - i0;
+    var t1 = t0 - 1;
+    i0 &= this.hashMask;
+    var i1 = i0 + 1;
+    
+    var g0 = this.gradients1D[this.hash[i0] & this.gradientsMask1D];
+    var g1 = this.gradients1D[this.hash[i1] & this.gradientsMask1D];
+    
+    var v0 = g0 * t0;
+    var v1 = g1 * t1;
+    
+    var t = smooth(t0);
+    
+    return lerp(v0, v1, t) * 2;
+  },
+  perlin2D: function(point1, freq) {
+    var point = [point1[0] * freq, point1[1] * freq]
+    
+    var ix0 = Math.floor(point[0]);
+    var iy0 = Math.floor(point[1]);
+    var tx0 = point[0] - ix0;
+    var ty0 = point[1] - iy0;
+    var tx1 = tx0 - 1;
+    var ty1 = ty0 - 1;
+    ix0 &= this.hashMask;
+    iy0 &= this.hashMask;
+    var ix1 = ix0 + 1;
+    var iy1 = iy0 + 1;
+    
+    var h0 = this.hash[ix0];
+    var h1 = this.hash[ix1];
+    var g00 = this.gradients2D[this.hash[h0 + iy0] & this.gradientsMask2D];
+    var g10 = this.gradients2D[this.hash[h1 + iy0] & this.gradientsMask2D];
+    var g01 = this.gradients2D[this.hash[h0 + iy1] & this.gradientsMask2D];
+    var g11 = this.gradients2D[this.hash[h1 + iy1] & this.gradientsMask2D];
+    
+    var v00 = dot(g00, tx0, ty0);
+    var v10 = dot(g10, tx1, ty0);
+    var v01 = dot(g01, tx0, ty1);
+    var v11 = dot(g11, tx1, ty1);
+    
+    tx = smooth(tx0);
+    ty = smooth(ty0);
+    
+    //return v01;
+    
+    return lerp(lerp(v00, v10, tx), lerp(v01, v11, tx), ty) * sqr2;
+  },
+  sum: function(method, point, freq, octaves) {
+    var sum = method.call(this, point, freq);
+    var amplitude = 1;
+    var range = 1;
+    for (var o = 1; o < octaves; o++)
+    {
+      freq *= 2;
+      amplitude *= 0.5;
+      range += amplitude;
+      sum += method.call(this, point, freq) * amplitude;
+    }
+    return sum / range;
+  }
+}
+
+function setColor(data, x, y, color)
+{
+  if (typeof(color) == "number")
+  {
+    data.data[(y * data.width * 4) + x * 4 + 0] = color;
+    data.data[(y * data.width * 4) + x * 4 + 1] = color;
+    data.data[(y * data.width * 4) + x * 4 + 2] = color;
+    data.data[(y * data.width * 4) + x * 4 + 3] = 255;
+  }
+  else
+  {
+    data.data[(y * data.width * 4) + x * 4 + 0] = color[0] || 0;
+    data.data[(y * data.width * 4) + x * 4 + 1] = color[1] || 0;
+    data.data[(y * data.width * 4) + x * 4 + 2] = color[2] || 0;
+    data.data[(y * data.width * 4) + x * 4 + 3] = color.length == 4 ? color[3] : 255;
+  }
+}
+
+function fillTexture(data)
+{
+  var frequency = 32;
+  var stepSize = 1 / Math.min(data.width, data.height);
+  var squareLength = Math.min(data.width, data.height);
+  //pointxy
+  //the four corners of a square of length 1 centered around 0, 0
+  var point00 = [-0.5,-0.5];
+  var point10 = [ 0.5,-0.5];
+  var point01 = [-0.5, 0.5];
+  var point11 = [ 0.5, 0.5];
+  for (var y = 0; y < data.height; y++)
+  {
+    var point0 = lerp(point00, point01, (y + 0.5) * stepSize);
+    var point1 = lerp(point10, point11, (y + 0.5) * stepSize);
+    for (var x = 0; x < data.width; x++)
+    {
+      var point = lerp(point0, point1, (x + 0.5) * stepSize);
+      var sample = Noise.sum(Noise.perlin2D, point, 2, 6) * 0.5 + 0.5;
+      //sample = Noise.sum(Noise.perlin2D, [x / squareLength * 2, y / squareLength * 2], frequency, 1) * 0.5 + 0.5;
+      setColor(data, x, y, sample * 255);
+    }
+  }
+  return data;
+}
+
+onResize();
+
+window.onresize = onResize;
+</script>
+</body>
+</html>
