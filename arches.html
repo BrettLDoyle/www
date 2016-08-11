@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html, body {
+	margin: 0;
+}
+#canvas {
+	display: block;
+}
+#notice {
+	position: fixed;
+	top: 0;
+	left: 50%;
+	transform: translate(-50%);
+	
+	color: blue;
+}
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<div id="notice"></div>
+<script>
+var ctx = canvas.getContext('2d');
+
+var w = 0;
+var h = 0;
+
+function updateCanvasSize() {
+	canvas.width = w = window.innerWidth;
+	canvas.height = h = window.innerHeight;
+	
+	ctx.strokeStyle = 'rgb(50, 50, 50)';
+	ctx.lineCap = 'butt';
+}
+
+var i;
+
+var lines = [];
+
+var curve = .7;
+var maxCurveDif = 0.5;
+
+var lineSegmentLength = 3;
+var lineMinWidth = 10;
+var lineMaxWidth = 20;
+
+var pixels = false;
+	
+function rotate(vec, angle) {
+	angle = angle * Math.PI / 180.0;
+	return [(vec[0] * Math.cos(angle)) - (vec[1] * Math.sin(angle)), (vec[0] * Math.sin(angle)) + (vec[1] * Math.cos(angle))];
+}
+function onScreen(pos) {
+	return (pos[0] > 0 && pos[1] > 0 && pos[0] < w && pos[1] < h);
+}
+
+function line(pos, dir, parentWidth) {
+	pos = pos || false;
+	dir = dir || false;
+	this.pos = [
+		typeof(pos[0]) != "undefined" ? pos[0] : ~~(Math.random() * w),
+		typeof(pos[1]) != "undefined" ? pos[1] : ~~(Math.random() * h),
+	]
+	
+	this.dir = [
+		typeof(dir[0]) != "undefined" ? dir[0] : 0,
+		typeof(dir[1]) != "undefined" ? dir[1] : (Math.random() < 0.5) ? -1 : 1
+	]
+	if (dir) {
+		this.pos[0] += dir[0] * (parentWidth/2.2);
+		this.pos[1] += dir[1] * (parentWidth/2.2);
+	}
+	
+	this.angle = Math.random() < 0.5 ? (curve + (Math.random() * maxCurveDif * 2) - maxCurveDif) : (-curve + (Math.random() * maxCurveDif * 2) - maxCurveDif);
+	
+	this.width = lineMinWidth + Math.random() * (lineMaxWidth - lineMinWidth);
+	
+	this.age = 0;
+	this.lastSpawn = -20;
+	this.kill = -1;
+}
+line.prototype.updateAndDraw = function() {
+	this.dir = rotate(this.dir, this.angle);
+	if (pixels.data[((w * ~~(this.pos[1] + this.dir[1] * (lineSegmentLength + 1))) + ~~(this.pos[0] + this.dir[0] * (lineSegmentLength + 1))) * 4 + 3] > 0) {
+		this.kill = Math.max(this.kill, 0);
+	}
+	
+	ctx.lineWidth = this.width;
+	ctx.beginPath();
+	ctx.moveTo(this.pos[0], this.pos[1]);
+	ctx.lineTo(this.pos[0] + this.dir[0] * lineSegmentLength, this.pos[1] + this.dir[1] * lineSegmentLength);
+	ctx.stroke();
+	
+	this.pos[0] += this.dir[0] * (lineSegmentLength - 1);
+	this.pos[1] += this.dir[1] * (lineSegmentLength - 1);
+	
+	this.age += 1;
+	this.lastSpawn += 1;
+	if (this.age * this.angle >= 360) {
+		this.kill = Math.max(this.kill, 0);
+	}
+	if (this.kill != -1) {
+		this.kill += 1;
+	}
+}
+line.prototype.spawn = function() {
+	if (onScreen(this.pos)) {
+		lines.push(new line(this.pos, rotate(this.dir, (this.angle < 0) ? 90 : -90), this.width));
+	}
+	this.lastSpawn = 0;
+}
+
+function updateAndDraw() {
+	pixels = ctx.getImageData(0, 0, w, h);
+	for (i = lines.length - 1; i >= 0; i--) {
+		lines[i].updateAndDraw();
+		if (Math.random() >= 0.8 && lines[i].lastSpawn >= 70) {
+			lines[i].spawn();
+		}
+		if (lines[i].kill >= 2) {
+			lines.splice(i, 1);
+		}
+	}
+	if (lines.length > 0) {
+		requestAnimationFrame(updateAndDraw);
+	} else {
+		notice.textContent = 'Finished';
+	}
+}
+
+updateCanvasSize();
+
+lines.push(new line([w/4, h/2]));
+lines.push(new line([w/2 + w/4, h/2]));
+
+updateAndDraw();
+
+window.addEventListener('resize', updateCanvasSize);
+</script>
+</body>
+</html>
