@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<script>
+var ctx = canvas.getContext('2d');
+
+var width = 2480;
+var height = 3508;
+
+canvas.width = width;
+canvas.height = height;
+
+
+var diam = width/15;
+var rad = diam/2;
+
+var h = (Math.sqrt(3.0)/2.0) * diam;
+
+var offset = false;
+for (var y = 0; y < height / h + height/h; y += 1) {
+  offset = !offset;
+	for (var x = 0; x < width / diam + width/diam; x += 1) {
+		ctx.beginPath();
+		if (offset) {
+      ctx.arc(x * diam, y * h, rad, 0, 2 * Math.PI);
+		} else {
+			ctx.arc(x * diam - rad, y * h, rad, 0, 2 * Math.PI);
+		}
+		ctx.closePath();
+		var val = Math.floor(Math.random() * 255);
+		ctx.fillStyle = 'rgb(' + val + ',' + val + ',' + val + ')';
+		ctx.strokeStyle = ctx.fillStyle;
+		
+		ctx.fill();
+		ctx.stroke();
+	}
+}
+
+</script>
+</body>
+</html>

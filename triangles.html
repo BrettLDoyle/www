@@ -1,0 +1,64 @@
+<body>
+<canvas id="canvas" style="width:100%"></canvas>
+<script>
+var ctx = canvas.getContext('2d');
+
+var width = canvas.width = 2480;
+var height = canvas.height = 1754;
+
+var min_area = 500;
+
+var range = [0.3, 0.7];
+
+function length(vec) {
+  return Math.sqrt(vec[0] * vec[0] + vec[1] * vec[1]);
+}
+
+function draw_tri(p1, p2, p3, iters) {
+  ctx.beginPath();
+  ctx.moveTo(p1[0], p1[1]);
+  ctx.lineTo(p2[0], p2[1]);
+  ctx.lineTo(p3[0], p3[1]);
+  ctx.closePath();
+  
+  ctx.stroke();
+  
+  var a = length([p1[0] - p2[0], p1[1] - p2[1]]);
+  var b = length([p2[0] - p3[0], p2[1] - p3[1]]);
+  var c = length([p3[0] - p1[0], p3[1] - p1[1]]);
+  var s = (a + b + c)/2;
+  if (Math.sqrt(s * (s - a) * (s - b) * (s- c)) > min_area) {
+    //p1 - p2
+    var t = range[0] + Math.random() * (range[1] - range[0]);
+    var m1 = [p1[0] + t * (p2[0] - p1[0]), p1[1] + t * (p2[1] - p1[1])];
+    
+    //p2 - p3
+    t = Math.random();
+    var m2 = [p2[0] + t * (p3[0] - p2[0]), p2[1] + t * (p3[1] - p2[1])];
+    
+    //p3 - p1
+    t = Math.random();
+    var m3 = [p3[0] + t * (p1[0] - p3[0]), p3[1] + t * (p1[1] - p3[1])];
+    
+    draw_tri(p1, m1, m3, iters);
+    
+    draw_tri(m1, p2, m2, iters);
+    draw_tri(m2, p3, m3, iters);
+    
+    draw_tri(m1, m2, m3, iters);
+  }
+}
+
+var grid_width = 200;
+var grid_height = (Math.sqrt(3)/2) * grid_width;
+for (var y = 0; y < height + grid_height; y+= grid_height) {
+  for (var x = -grid_width; x < width + grid_width; x += grid_width) {
+    draw_tri([x, y], [x + grid_width, y], [x + grid_width/2, y + grid_height]);
+    draw_tri([x + grid_width, y], [x + grid_width * 1.5, y + grid_height], [x + grid_width/2, y + grid_height]);
+  }
+}
+
+//draw_tri([0, 0], [width, 0], [0, height], 0);
+//draw_tri([width, 0], [width, height], [0, height], 0);
+</script>
+</body>
