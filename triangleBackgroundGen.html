@@ -10,10 +10,15 @@ var ctx = canvas.getContext('2d');
 var width = 877;
 var height = 1240;
 
+width = 2480;
+height = 3508;
+
 canvas.width = width;
 canvas.height = height;
 
 var tri_rad = 15;
+
+tri_rad = width/15;
 
 function rotate(vec, angle) {
 	angle = angle * Math.PI / 180.0;
@@ -21,27 +26,23 @@ function rotate(vec, angle) {
 	return [vec[0] * Math.cos(angle) - vec[1] * Math.sin(angle), vec[0] * Math.sin(angle) + vec[1] * Math.cos(angle)];
 }
 
+var tri_points = [[0, 0], [tri_rad, 0], rotate([tri_rad, 0], 60)];
 
-var tri_points = [[0, 0], rotate([0, tri_rad], 120), rotate([0, tri_rad], 240)];
-tri_points[1][1] -= tri_rad;
-tri_points[2][1] -= tri_rad;
-
-var tri_width = Math.abs(tri_points[1][0] - tri_points[2][0]);
-var tri_height = Math.abs(tri_points[1][1]);
+var tri_height = tri_points[2][1];
 
 var flip = false;
 for (var y = 0; y < height / tri_height; y += 1) {
 	flip = y % 2;
-	for (var x = 0; x < width / tri_width; x += 0.5) {
+	for (var x = -1; x < width / tri_rad; x += 0.5) {
 		ctx.beginPath();
 		if (flip) {
-			ctx.moveTo(tri_points[2][0] + x * tri_width, 0 + y * tri_height);
-			ctx.lineTo(tri_points[1][0] + x * tri_width, 0 + y * tri_height);
-			ctx.lineTo(tri_points[0][0] + x * tri_width, tri_height + y * tri_height);
+      ctx.moveTo(tri_points[0][0] + x * tri_rad, tri_points[0][1] + y * tri_height);
+      ctx.lineTo(tri_points[1][0] + x * tri_rad, tri_points[1][1] + y * tri_height);
+      ctx.lineTo(tri_points[2][0] + x * tri_rad, tri_points[2][1] + y * tri_height);
 		} else {
-			ctx.moveTo(tri_points[0][0] + x * tri_width, 0 + y * tri_height);
-			ctx.lineTo(tri_points[1][0] + x * tri_width, tri_height + y * tri_height);
-			ctx.lineTo(tri_points[2][0] + x * tri_width, tri_height + y * tri_height);
+			ctx.moveTo(tri_points[0][0] + x * tri_rad, tri_points[0][1] + tri_height + y * tri_height);
+      ctx.lineTo(tri_points[1][0] + x * tri_rad, tri_points[1][1] + tri_height + y * tri_height);
+      ctx.lineTo(tri_points[2][0] + x * tri_rad, tri_points[2][1] - tri_height + y * tri_height);
 		}
 		ctx.closePath();
 		var val = Math.floor(Math.random() * 255);
