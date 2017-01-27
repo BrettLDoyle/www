@@ -1,0 +1,318 @@
+var hueMin = 0;
+var hueMax = 360/4;
+var sat = 80;
+var light = 60;
+var center;
+var maxDist;
+var inside = false;
+//function determinant(t1, t2, t3, m1, m2, m3, b1, b2, b3) {
+function determinant(m) {
+	return m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
+	//matrix = [[t1, t2, t3], [m1, m2, m3], [b1, b2, b3]];
+	//return t1 * (m2 * b3 - m3 * b2) - t2 * (m1 * b3 - m3 * b1) + t3 * (m1 * b2 - m2 * b1);
+}
+
+
+function dist(a, b) {
+  return Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
+}
+
+function point(x, y) {
+	this.x = x || 0;
+	this.y = y || 0;
+}
+point.prototype.draw = function() {
+	ctx.beginPath();
+	ctx.arc(this.x, this.y, 4, 0, 2 * Math.PI);
+	ctx.fill();
+	ctx.stroke();
+}
+
+function Face(a, b, c) {
+	this.points = [a, b, c];
+	this.makeClockwise();
+}
+Face.prototype.draw = function() {
+  var c = this.getCenter();
+  var d = dist(c, center);
+  var draw = d < width/4 || (dist < width/3 && Math.random() > 0.6)
+  if (!inside) {
+    d = maxDist - d;
+    draw = d < width/2;
+  }
+  if (c.x < 0 || c.x > width || c.y < 0 || c.y > height) {
+    draw = false;
+  }
+  if (draw) {
+    ctx.fillStyle = "hsl(" + ~~(hueMin + Math.random() * (hueMax - hueMin)) + "," + sat + "%," + light + "%)";
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = (d + 1) * 0.1;
+    ctx.lineJoin = "round";
+    
+    ctx.beginPath();
+    ctx.moveTo(this.points[0].x, this.points[0].y);
+    ctx.lineTo(this.points[1].x, this.points[1].y);
+    ctx.lineTo(this.points[2].x, this.points[2].y);
+    ctx.closePath();
+    
+    ctx.fill();
+    ctx.stroke();
+  }
+}
+Face.prototype.makeClockwise = function() {
+	if ((this.points[1].x - this.points[0].x) * (this.points[2].y - this.points[0].y) - (this.points[2].x - this.points[0].x) * (this.points[1].y - this.points[0].y) > 0) {
+		var t = this.points[1];
+		this.points[1] = this.points[2];
+		this.points[2] = t;
+	}
+}
+Face.prototype.getEdges = function() {
+	return [[this.points[0], this.points[1]], [this.points[1], this.points[2]], [this.points[2], this.points[0]]];
+}
+Face.prototype.pointInCircle = function(point) {
+	var x1 = this.points[0].x;
+    var x2 = this.points[1].x;
+    var x3 = this.points[2].x;
+    
+    var y1 = this.points[0].y;
+    var y2 = this.points[1].y;
+    var y3 = this.points[2].y;
+	
+	
+    //var a  = x1 * (y2 - y3) - y1 * (x2 - x3) + x2 * y3 - y2 * x3;
+	var a = determinant([
+	[x1, y1, 1],
+	[x2, y2, 1],
+	[x3, y3, 1]
+	]);
+    //var bx = -((x1 * x1 + y1 * y1) * (x2 - x3) - y1 * (x2 * x2 + y2 * y2 - x3 * x3 - y3 * y3) + y3 * (x2 * x2 + y2 * y2) - y2  * (x3 * x3 + y3 * y3));
+    //var by =  ((x1 * x1 + y1 * y1) * (y2 - y3) - x1 * (x2 * x2 + y2 * y2 - x3 * x3 - y3 * y3) + x3 * (x2 * x2 + y2 * y2) - x2  * (x3 * x3 + y3 * y3));
+	var bx = - determinant([
+	[x1 * x1 + y1 * y1, y1, 1],
+	[x2 * x2 + y2 * y2, y2, 1],
+	[x3 * x3 + y3 * y3, y3, 1]
+	]);
+	
+	var by = determinant([
+	[x1 * x1 + y1 * y1, x1, 1],
+	[x2 * x2 + y2 * y2, x2, 1],
+	[x3 * x3 + y3 * y3, x3, 1]
+	]);
+	
+    //var c  = -((x1 * x1 + y1 * y1) * (x2 * y3 - y2 * x3) - x1 * ((x2 * x2 + y2 * y2) * y3 - y2 * (x3 * x3 + y3 * y3)) + y1 * ((x2 * x2 + y2 * y2) * x3 - x2 * (x3 * x3 + y3 * y3)));
+    var c = - determinant([
+	[x1 * x1 + y1 * y1, x1, y1],
+	[x2 * x2 + y2 * y2, x2, y2],
+	[x3 * x3 + y3 * y3, x3, y3]
+	]);
+	
+    return (a * (point.x * point.x + point.y * point.y) + bx * point.x + by * point.y + c) > 0;
+}
+Face.prototype.drawCircumCircle = function() {
+	var x1 = this.points[0].x;
+    var x2 = this.points[1].x;
+    var x3 = this.points[2].x;
+    
+    var y1 = this.points[0].y;
+    var y2 = this.points[1].y;
+    var y3 = this.points[2].y;
+    
+    //var a  = x1 * (y2 - y3) - y1 * (x2 - x3) + x2 * y3 - y2 * x3;
+	var a = determinant([
+	[x1, y1, 1],
+	[x2, y2, 1],
+	[x3, y3, 1]
+	]);
+    //var bx = -((x1 * x1 + y1 * y1) * (x2 - x3) - y1 * (x2 * x2 + y2 * y2 - x3 * x3 - y3 * y3) + y3 * (x2 * x2 + y2 * y2) - y2  * (x3 * x3 + y3 * y3));
+    //var by =  ((x1 * x1 + y1 * y1) * (y2 - y3) - x1 * (x2 * x2 + y2 * y2 - x3 * x3 - y3 * y3) + x3 * (x2 * x2 + y2 * y2) - x2  * (x3 * x3 + y3 * y3));
+	var bx = - determinant([
+	[x1 * x1 + y1 * y1, y1, 1],
+	[x2 * x2 + y2 * y2, y2, 1],
+	[x3 * x3 + y3 * y3, y3, 1]
+	]);
+	
+	var by = determinant([
+	[x1 * x1 + y1 * y1, x1, 1],
+	[x2 * x2 + y2 * y2, x2, 1],
+	[x3 * x3 + y3 * y3, x3, 1]
+	]);
+	
+    //var c  = -((x1 * x1 + y1 * y1) * (x2 * y3 - y2 * x3) - x1 * ((x2 * x2 + y2 * y2) * y3 - y2 * (x3 * x3 + y3 * y3)) + y1 * ((x2 * x2 + y2 * y2) * x3 - x2 * (x3 * x3 + y3 * y3)));
+    var c = - determinant([
+	[x1 * x1 + y1 * y1, x1, y1],
+	[x2 * x2 + y2 * y2, x2, y2],
+	[x3 * x3 + y3 * y3, x3, y3]
+	]);
+	
+	var x0 = -(bx / (2 * a));
+	var y0 = -(by / (2 * a));
+	
+	var r = Math.sqrt(bx * bx + by * by - 4 * a * c) / ( 2 * a);
+	
+	ctx.beginPath();
+	ctx.arc(x0, y0, Math.abs(r), 0, 2 * Math.PI);
+	ctx.fill();
+	ctx.stroke();
+}
+Face.prototype.getCenter = function() {
+  return new point(
+    (this.points[0].x + this.points[1].x + this.points[2].x)/3,
+    (this.points[0].y + this.points[1].y + this.points[2].y)/3
+  )
+}
+
+var points = [];
+var edgePoints = [];
+var faces = [];
+
+var width = canvas.width = 2480;
+var height = canvas.height = 3507;
+
+center = new point(width/2, height/2);
+maxDist = dist(center, new point(0, 0));
+
+var edgeSpacing = 120;
+var edgeCountX = ~~(width/edgeSpacing);
+var edgeCountY = ~~(height/edgeSpacing);
+var pointCount = (edgeCountX - 1) * (edgeCountY - 1);
+
+var face = new Face(new point(50, 50), new point(150, 50), new point(50, 150));
+
+var p = new point(30, 30);
+
+function resetPoints() {
+	edgePoints[0] = new point(-2, -2);
+	edgePoints[1] = new point(width + 2, -2);
+	edgePoints[2] = new point(width + 2, height + 2);
+	edgePoints[3] = new point(-2, height + 2);
+
+	points = [];
+	for (var i = 0; i < pointCount; i++) {
+		points.push(new point(Math.random() * width, Math.random() * height));
+	}
+  
+  for (var x = 0; x < edgeCountX; x++) {
+    points.push(new point(x * width/edgeCountX, 0));
+    points.push(new point(x * width/edgeCountX, height));
+  }
+  for (var y = 0; y < edgeCountY; y++) {
+    points.push(new point(0, y * height/edgeCountY));
+    points.push(new point(width, y * height/edgeCountY));
+  }
+  /*
+	for (var i = 0; i < edgeCount; i++) {
+		points.push(new point(i * width/edgeCount, 0));
+		points.push(new point(width, i * height/edgeCount));
+		points.push(new point(width - i * width/edgeCount, height));
+		points.push(new point(0, height - i * height/edgeCount));
+	}
+  */
+}
+
+function draw1() {
+	ctx.clearRect(0, 0, width, height);
+	
+	
+	ctx.fillStyle = 'transparent';
+	ctx.strokeStyle = 'black';
+	
+	face.draw();
+	
+	ctx.strokeStyle = 'blue';
+	face.drawCircumCircle();
+	
+	ctx.strokeStyle = 'transparent';
+	
+	if (face.pointInCircle(p)) {
+		ctx.fillStyle = 'red';
+	} else {
+		ctx.fillStyle = 'green';
+	}
+	p.draw();
+}
+
+function draw() {
+	faces = [];
+	
+	ctx.clearRect(0, 0, width, height);
+	
+	ctx.fillStyle = 'transparent';
+	ctx.strokeStyle = 'black';
+	
+	faces.push(new Face(edgePoints[0], edgePoints[1], edgePoints[3]));
+	faces.push(new Face(edgePoints[1], edgePoints[2], edgePoints[3]));
+	
+	for (var i = 0; i < points.length; i++) {
+		var edges = [];
+		
+		for (var j = faces.length - 1; j >= 0; j--) {
+			if (faces[j].pointInCircle(points[i])) {
+				var faceEdges = faces[j].getEdges();
+				
+				edges.push(faceEdges[0]);
+				edges.push(faceEdges[1]);
+				edges.push(faceEdges[2]);
+				
+				faces.splice(j, 1);
+			}
+		}
+		
+		//now remove all duplicate edges
+		for (var j = edges.length - 1; j >= 0; j--) {
+			if (j < edges.length) {
+				for (var k = j - 1; k >= 0; k--) {
+					if (sameEdge(edges[j], edges[k])) {
+						edges.splice(j, 1);
+						edges.splice(k, 1);
+						break;
+					}
+				}
+			}
+		}
+		
+		for (var j = 0; j < edges.length; j++) {
+			faces.push(new Face(edges[j][0], edges[j][1], points[i]));
+		}
+	}
+	
+	for (var i = 0; i < faces.length; i++) {
+		faces[i].draw();
+    //faces[i].drawCircumCircle();
+	}
+	/*
+	ctx.fillStyle = 'rgb(255, 0, 0)';
+	ctx.strokeStyle = 'transparent';
+	for (var i = 0; i < points.length; i++) {
+		points[i].draw();
+	}
+  */
+}
+
+function setup() {
+	ctx = canvas.getContext('2d');
+	
+	resetPoints();
+	
+	draw();
+}
+
+function sameEdge(edge1, edge2) {
+	return ((edge1[0].x == edge2[0].x && edge1[0].y == edge2[0].y && edge1[1].x == edge2[1].x && edge1[1].y == edge2[1].y) || (edge1[0].x == edge2[1].x && edge1[0].y == edge2[1].y && edge1[1].x == edge2[0].x && edge1[1].y == edge2[0].y));
+}
+
+function a() {
+	pointCount += 1;
+	resetPoints();
+	draw();
+}
+
+setup();
+/*
+canvas.onmousemove = function(e) {
+	p.x = e.offsetX;
+	p.y = e.offsetY;
+	
+	draw();
+}
+
+*/
