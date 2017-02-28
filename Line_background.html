@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<body>
+<canvas id="canvas"></canvas>
+<script>
+var ctx = canvas.getContext('2d');
+
+var w = 2481;
+var h = 3508;
+
+//w /= 3;
+//h /= 3;
+
+canvas.width = w;
+canvas.height = h;
+
+ctx.fillStyle = 'white';
+ctx.fillRect(0, 0, w, h);
+ctx.fillStyle = 'rgb(50, 50, 50)';
+ctx.strokeStyle = 'black';
+
+var two_pi = 2 * Math.PI;
+
+var gsize = w/24;
+
+var o = (Math.sqrt(3.0)/2.0) * gsize;
+
+var tri_h = Math.sqrt(gsize * gsize - (gsize/2) * (gsize/2));
+
+var hex = [
+  {x: -gsize/2, y: -tri_h},
+  {x:  gsize/2, y: -tri_h},
+  {x:  gsize,   y: 0},
+  {x:  gsize/2, y: tri_h},
+  {x: -gsize/2, y: tri_h},
+  {x: -gsize,   y: 0},
+]
+
+ctx.lineWidth = gsize/30;
+
+var offset = false;
+for (var y = 0; y < h + gsize * 2; y += tri_h) {
+  offset = !offset;
+  
+  var _x = 0;
+  if (offset) {
+    _x = -gsize * 1.5;
+  }
+  
+	for (var x = _x; x < w + gsize * 2; x += gsize * 3) {
+		ctx.beginPath();
+    
+    ctx.moveTo(hex[0].x + x, hex[0].y + y);
+    
+    for (var i = 1; i < hex.length; i++) {
+      ctx.lineTo(hex[i].x + x, hex[i].y + y);
+    }
+    
+		ctx.closePath();
+		ctx.stroke();
+    
+    ctx.beginPath();
+    
+    var size = (Math.sin( y/(gsize) + x/(gsize)) + 2) * gsize * 0.04;
+    
+    for (var i = 0; i < hex.length; i++) {
+      ctx.arc(hex[i].x + x, hex[i].y + y, size, 0, two_pi);
+      ctx.closePath();
+    }
+    
+    if (Math.sin(y/tri_h * 0.4 + x/tri_h) > 0.2) {
+      size = size/5 + gsize/15;
+      ctx.arc(x, y, size, 0, two_pi);
+      ctx.closePath();
+    }
+    
+    ctx.fill();
+	}
+}
+
+</script>
+</body>
+</html>
