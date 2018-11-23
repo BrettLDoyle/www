@@ -4,6 +4,7 @@
 <meta http-equiv="X-Clacks-Overhead" content="GNU Terry Pratchett"/>
 <!-- meh -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta id="theme-color" name="theme-color" content="hsl(0, 100%, 50%)">
 <style>
 body {
 	background: url(background.gif);
@@ -202,6 +203,18 @@ function createDiv(height, width) {
 	div.style.backgroundColor=colour;
 	return (div);
 }
+</script>
+<script type="text/javascript">
+var tag = document.getElementById('theme-color')
+var hue = 0
+
+setInterval(function() { 
+	tag.setAttribute('content', 'hsl(' + hue + ', 100%, 50%)')
+	hue += 1
+	if (hue === 360) {
+		hue = 0
+	}
+}, 400)
 </script>
 </body>
 </html>
