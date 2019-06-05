@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+body {
+    margin: 0;
+    padding: 0;
+}
+#canvas {
+    display: block;
+}
+        </style>
+    </head>
+    <body>
+        <canvas id="canvas"></canvas>
+        <script>
+var ctx = canvas.getContext("2d");
+
+var width, height;
+
+var line_width;
+var section_length;
+
+var count_x, count_y;
+
+var p1, p2, p3, p4, off;
+
+var anim_time = 5000;
+
+function easeQuad(t) {
+    return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+}
+function easeCubic(t) {
+    return t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1;
+}
+function easeQuart(t) {
+    return t < 0.5 ? 8 * t * t * t * t : 1 - 8 * (--t) * t * t * t;
+}
+function easeQuint(t) {
+    return t < 0.5 ? 16 * t * t * t * t * t : 1 + 16 * (--t) * t * t * t * t;
+}
+
+function rad(degrees) {
+    return degrees * Math.PI / 180;
+}
+
+function add(a, b) {
+    return [a[0] + b[0], a[1] + b[1]];
+}
+function sub(a, b) {
+    return [a[0] - b[0], a[1] - b[1]];
+}
+function rotate(a, angle) {
+    angle = rad(angle);
+
+    var cs = Math.cos(angle);
+    var sn = Math.sin(angle);
+
+    return [a[0] * cs - a[1] * sn, a[0] * sn + a[1] * cs];
+}
+function mult(a, scale) {
+    return [a[0] * scale, a[1] * scale];
+}
+
+function transform(p, center, offset, rotation, scale) {
+    p = add(p, mult(off, offset));
+    return add(center, rotate(p, rotation));
+}
+
+function setup() {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+
+    section_length = Math.min(width, height) / 8;
+
+    count_x = ~~(width / section_length);
+    count_y = ~~(height / section_length);
+
+    section_length = width / count_x;
+    line_width = section_length/16;
+
+    count_y = Math.ceil(height / section_length);
+
+    var half_length = section_length/2;
+    var half_width = line_width/2;
+
+    p1 = [-half_length,-half_width];
+    p2 = [-half_length, half_width];
+    p3 = [ half_length, half_width];
+    p4 = [ half_length,-half_width];
+
+    off = [0, 1];
+
+    ctx.fillStyle = 'black';
+}
+
+var time = 0;
+var last_time = Date.now();
+var last_rotate_time = 0;
+function draw() {
+    time += Date.now() - last_time;
+
+    ctx.clearRect(0, 0, width, height);
+
+    var anim_offset = (time % anim_time)/anim_time;
+
+    var offset = anim_offset;
+    if (offset < 0.5) {
+        offset = easeCubic(offset);
+    } else {
+        offset = 1 - offset;
+        offset = easeQuint(offset);
+    }
+    offset *= section_length;
+
+    var rotation = anim_offset;
+    rotation = easeQuart(rotation);
+    rotation *= 90;
+
+    var scale = anim_offset;
+    scale = easeCubic(scale);
+    scale *= section_length/30;
+
+    if (time - last_rotate_time >= anim_time) {
+        p1 = rotate(p1, 90);
+        p2 = rotate(p2, 90);
+        p3 = rotate(p3, 90);
+        p4 = rotate(p4, 90);
+        last_rotate_time = time;
+    }
+
+    var vertical = (time % ( anim_time * 2)) >= anim_time;
+
+    for (var x = 0; x < count_x; x++) {
+        for (var y = 0; y < count_y; y++) {
+            var center = [x * section_length + section_length/2, y * section_length + section_length/2];
+            var flip = (vertical && y % 2 == 0) || (!vertical && x % 2 == 0);
+
+            var np1 = transform(p1, center, flip ?  offset : -offset, flip ? -rotation : rotation, scale);
+            var np2 = transform(p2, center, flip ?  offset : -offset, flip ? -rotation : rotation, scale);
+            var np3 = transform(p3, center, flip ? -offset : offset, flip ? -rotation : rotation, scale);
+            var np4 = transform(p4, center, flip ? -offset : offset, flip ? -rotation : rotation, scale);
+            var cp1 = transform(p1, center, 0, flip ? -rotation : rotation, scale);
+            var cp2 = transform(p2, center, 0, flip ? -rotation : rotation, scale);
+            var cp3 = transform(p3, center, 0, flip ? -rotation : rotation, scale);
+            var cp4 = transform(p4, center, 0, flip ? -rotation : rotation, scale);
+
+            ctx.beginPath();
+            ctx.moveTo(np2[0], np2[1]);
+            ctx.bezierCurveTo(cp2[0], cp2[1], cp3[0], cp3[1], np3[0], np3[1]);
+            ctx.lineTo(np4[0], np4[1]);
+            ctx.bezierCurveTo(cp4[0], cp4[1], cp1[0], cp1[1], np1[0], np1[1]);
+            ctx.closePath();
+            ctx.fill();
+        }
+    }
+
+    last_time = Date.now();
+    requestAnimationFrame(draw);
+}
+
+setup();
+draw();
+
+        </script>
+    </body>
+</html>
