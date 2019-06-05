@@ -33,6 +33,8 @@ var ant = {
 	dir: [1, 0]
 };
 
+var x = 0;
+
 canvas.width = width;
 canvas.height = height;
 
@@ -44,36 +46,47 @@ function reset() {
 			grid[x].push(true);
 		}
 	}
+	
+	ctx.fillStyle = 'rgb(160, 64, 255)'
+	ctx.fillRect(0, 0, width, height)
+
 	ant.pos = [Math.floor(width / 2), Math.floor(height / 2)];
 	ant.dir = [-1, 0];
 }
 
 reset();
 
-var id = ctx.createImageData(1, 1);
-id.data[3] = 255;
+var id = ctx.getImageData(0, 0, width, height);
 
-function draw() {
+
+function update() {
+	x = ant.pos[1] * (width * 4) + ant.pos[0] * 4;
+
 	if (grid[ant.pos[0]][ant.pos[1]]) {
-		//white
-		ant.dir = [-ant.dir[1], ant.dir[0]];
+		ant.dir = [-ant.dir[1], ant.dir[0]]
+
+		id.data[x] = id.data[x + 1] = 255
+
+		grid[ant.pos[0]][ant.pos[1]] = false
 	} else {
-		//black
-		ant.dir = [ant.dir[1], -ant.dir[0]];
+		ant.dir = [ant.dir[1], -ant.dir[0]]
+
+		id.data[x] = id.data[x + 1] = 128
+		
+		grid[ant.pos[0]][ant.pos[1]] = true
 	}
-	grid[ant.pos[0]][ant.pos[1]] = !grid[ant.pos[0]][ant.pos[1]];
-	
-	//fill in the square
-	id.data[0] = id.data[1] = id.data[2] = grid[ant.pos[0]][ant.pos[1]] * 255;
-	
-	ctx.putImageData(id, ant.pos[0], ant.pos[1]);
-	
+
 	ant.pos[0] = (((ant.pos[0] + ant.dir[0]) % width) + width) % width;
 	ant.pos[1] = (((ant.pos[1] + ant.dir[1]) % height) + height) % height;
+}
+
+function draw() {
+	ctx.putImageData(id, 0, 0)
 	
 	requestAnimationFrame(draw);
 }
 
+setInterval(update, 1)
 requestAnimationFrame(draw);
 </script>
 </body>
