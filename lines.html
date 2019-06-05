@@ -1,22 +1,22 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <title>Lines</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <style>
-            html, body {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            }
-            #canvas {
-            display: block;
-            }
-        </style>
-    </head>
-    <body>
-        <canvas id="canvas">?</canvas>
-        <script>
+<head>
+<title>Lines</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+html, body {
+margin: 0;
+padding: 0;
+overflow: hidden;
+}
+#canvas {
+display: block;
+}
+</style>
+</head>
+<body>
+<canvas id="canvas">?</canvas>
+<script>
 var canvas = document.getElementById('canvas')
 var ctx = canvas.getContext('2d')
 
@@ -40,11 +40,13 @@ for (i = 0; i < (w * h) / 1000; i++) {
   ])
 }
 
-ctx.strokeStyle = 'hsl(37, 14, 25)'
-ctx.lineWidth = 1
-ctx.fillStyle = 'rgb(255, 212, 143)'
-ctx.fillRect(0, 0, w, h)
-ctx.fillStyle = 'rgba(255, 212, 143, 0.01)'
+function reset() {
+  ctx.strokeStyle = 'hsl(37, 14, 25)'
+  ctx.lineWidth = 1
+  ctx.fillStyle = 'rgb(255, 212, 143)'
+  ctx.fillRect(0, 0, w, h)
+  ctx.fillStyle = 'rgba(255, 212, 143, 0.01)'
+}
 
 function draw() {
   ctx.fillRect(0, 0, w, h)
@@ -73,17 +75,15 @@ function draw() {
   requestAnimationFrame(draw)
 }
 
+reset()
 requestAnimationFrame(draw)
 
 window.addEventListener('resize', () => {
   w = canvas.width = window.innerWidth
   h = canvas.height = window.innerHeight
-  
-  ctx.fillStyle = 'rgb(255, 255, 255)'
-  ctx.fillRect(0, 0, w, h)
 
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.01)'
+  reset()
 })
-        </script>
-    </body>
+</script>
+</body>
 </html>
