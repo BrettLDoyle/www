@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+html, body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+#canvas {
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    image-rendering: -moz-crisp-edges;
+}
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<script>
+var canvas = document.getElementById('canvas')
+var ctx = canvas.getContext('2d')
+
+var width, height, pixel_count, bottom_row_index
+var image_data = false
+
+var grid = []
+var old_grid = []
+
+var frame_count = 0
+
+var options = {
+    density: 0.34,
+    scale: 5,
+    speed: 0,
+
+    mode: 1
+}
+
+if (window.location.search) {
+    var paramArray = decodeURI(window.location.search)
+        .slice(1, decodeURI(window.location.search).length)
+        .split('&')
+    var params = {}
+    for (var i = 0; i < paramArray.length; i++) {
+        var values = paramArray[i].split('=')
+        if (values.length == 2) {
+            if (values[1].length > 0) {
+                params[values[0]] = values[1]
+            }
+        }
+    }
+    if (params.density) {
+        var density = parseFloat(params.density)
+        if (!isNaN(density) && density > 0 && density < 1) {
+            options.density = density
+        }
+    }
+    if (params.scale) {
+        var scale = parseFloat(params.scale)
+        if (!isNaN(scale) && scale > 0) {
+            options.scale = scale
+        }
+    }
+    if (params.speed) {
+        var speed = parseFloat(params.speed)
+        if (!isNaN(speed) && speed > 0) {
+            options.speed = speed
+        }
+    }
+    if (params.mode) {
+        options.mode = 2
+    }
+}
+
+function updateSize() {
+    width = canvas.width = ~~(window.innerWidth / options.scale + 1)
+    height = canvas.height = ~~(window.innerHeight / options.scale + 1)
+
+    canvas.style.width = canvas.width * options.scale + 'px'
+    canvas.style.height = canvas.height * options.scale + 'px'
+
+    pixel_count = width * height
+    bottom_row_index = pixel_count - width
+}
+
+function resetGrid() {
+    grid = []
+
+    for (var i = 0; i < pixel_count; i++) {
+        if (Math.random() < options.density) {
+            grid.push(Math.random() < 0.5 ? 1 : 2)
+        } else {
+            grid.push(0)
+        }
+    }
+
+    old_grid = grid
+}
+
+function reset() {
+    updateSize()
+    resetGrid()
+
+    ctx.fillStyle = 'black'
+    ctx.fillRect(0, 0, width, height)
+
+    image_data = ctx.getImageData(0, 0, width, height)
+}
+
+function updateDown() {
+    var i
+    old_grid = [...grid]
+
+    for (i = 0; i < bottom_row_index; i++) {
+        if (old_grid[i] == 1 && old_grid[i + width] == 0) {
+            grid[i] = 0
+            grid[i + width] = 1
+
+            image_data.data[i * 4] = image_data.data[
+                i * 4 + 1
+            ] = image_data.data[i * 4 + 2] = 0
+
+            image_data.data[(i + width) * 4] = image_data.data[
+                (i + width) * 4 + 1
+            ] = 255
+            image_data.data[(i + width) * 4 + 2] = 0
+        }
+    }
+    for (i = bottom_row_index; i < pixel_count; i++) {
+        if (old_grid[i] == 1 && old_grid[i - bottom_row_index] == 0) {
+            grid[i] = 0
+            grid[i - bottom_row_index] = 1
+
+            image_data.data[i * 4] = image_data.data[
+                i * 4 + 1
+            ] = image_data.data[i * 4 + 2] = 0
+
+            image_data.data[(i - bottom_row_index) * 4] = image_data.data[
+                (i - bottom_row_index) * 4 + 1
+            ] = 255
+            image_data.data[(i - bottom_row_index) * 4 + 2] = 0
+        }
+    }
+
+    ctx.putImageData(image_data, 0, 0)
+
+    requestAnimationFrame(updateRight)
+}
+function updateRight() {
+    old_grid = [...grid]
+
+    for (var i = 0; i < pixel_count; i++) {
+        if (old_grid[i] == 2) {
+            if (i % width == width - 1) {
+                if (old_grid[i - width + 1] == 0) {
+                    grid[i] = 0
+                    grid[i - width + 1] = 2
+
+                    image_data.data[i * 4] = image_data.data[
+                        i * 4 + 1
+                    ] = image_data.data[i * 4 + 2] = 0
+
+                    image_data.data[(i - width + 1) * 4] = 0
+                    image_data.data[(i - width + 1) * 4 + 1] = image_data.data[
+                        (i - width + 1) * 4 + 2
+                    ] = 255
+                }
+            } else {
+                if (old_grid[i + 1] == 0) {
+                    grid[i] = 0
+                    grid[i + 1] = 2
+
+                    image_data.data[i * 4] = image_data.data[
+                        i * 4 + 1
+                    ] = image_data.data[i * 4 + 2] = 0
+
+                    image_data.data[(i + 1) * 4] = 0
+                    image_data.data[(i + 1) * 4 + 1] = image_data.data[
+                        (i + 1) * 4 + 2
+                    ] = 255
+                }
+            }
+        }
+    }
+
+    ctx.putImageData(image_data, 0, 0)
+
+    requestAnimationFrame(updateDown)
+}
+
+if (options.mode == 2) {
+    updateDown = function() {
+        var i
+
+        //Start at the top row; check if there's a cell waiting to move up
+        for (i = 0; i < width; i++) {
+            if (grid[i + bottom_row_index] == 1 && grid[i] == 0) {
+                grid[i + bottom_row_index] = 0
+                grid[i] = 1
+
+                image_data.data[(i + bottom_row_index) * 4] = image_data.data[
+                    (i + bottom_row_index) * 4 + 1
+                ] = image_data.data[(i + bottom_row_index) * 4 + 2] = 0
+
+                image_data.data[i * 4] = image_data.data[i * 4 + 1] = 255
+                image_data.data[i * 4 + 2] = 0
+            }
+        }
+
+        for (i = pixel_count - 1; i > width; i--) {
+            if (grid[i - width] == 1 && grid[i] == 0) {
+                grid[i - width] = 0
+                grid[i] = 1
+
+                image_data.data[(i - width) * 4] = image_data.data[
+                    (i - width) * 4 + 1
+                ] = image_data.data[(i - width) * 4 + 2] = 0
+
+                image_data.data[i * 4] = image_data.data[i * 4 + 1] = 255
+                image_data.data[i * 4 + 2] = 0
+            }
+        }
+
+        setTimeout(updateRight, options.speed)
+    }
+    updateRight = function() {
+        old_grid = grid.slice()
+
+        var i
+
+        for (i = pixel_count - 1; i > 0; i--) {
+            if (i % width == 0) {
+                continue
+            }
+
+            if (grid[i - 1] == 2 && grid[i] == 0) {
+                grid[i] = 2
+                grid[i - 1] = 0
+
+                image_data.data[(i - 1) * 4] = image_data.data[
+                    (i - 1) * 4 + 1
+                ] = image_data.data[(i - 1) * 4 + 2] = 0
+
+                image_data.data[i * 4] = 0
+                image_data.data[i * 4 + 1] = image_data.data[i * 4 + 2] = 255
+            }
+        }
+
+        for (i = 0; i < pixel_count; i += width) {
+            if (grid[i + width - 1] == 2 && grid[i] == 0) {
+                grid[i] = 2
+                grid[i + width - 1] = 0
+
+                image_data.data[(i + width - 1) * 4] = image_data.data[
+                    (i + width - 1) * 4 + 1
+                ] = image_data.data[(i + width - 1) * 4 + 2] = 0
+
+                image_data.data[i * 4] = 0
+                image_data.data[i * 4 + 1] = image_data.data[i * 4 + 2] = 255
+            }
+        }
+
+        setTimeout(updateDown, options.speed)
+    }
+}
+
+function draw() {
+    ctx.putImageData(image_data, 0, 0)
+
+    requestAnimationFrame(draw)
+}
+
+reset()
+updateDown()
+requestAnimationFrame(draw)
+
+window.addEventListener('resize', reset)
+
+</script>
+</body>
+</html>
