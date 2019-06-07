@@ -8,19 +8,10 @@ html, body {
 #canvas {
 	display: block;
 }
-#notice {
-	position: fixed;
-	top: 0;
-	left: 50%;
-	transform: translate(-50%);
-	
-	color: blue;
-}
 </style>
 </head>
 <body>
 <canvas id="canvas"></canvas>
-<div id="notice"></div>
 <script>
 var ctx = canvas.getContext('2d');
 
@@ -114,6 +105,7 @@ line.prototype.spawn = function() {
 
 function updateAndDraw() {
 	pixels = ctx.getImageData(0, 0, w, h);
+	
 	for (i = lines.length - 1; i >= 0; i--) {
 		lines[i].updateAndDraw();
 		if (Math.random() >= 0.8 && lines[i].lastSpawn >= 70) {
@@ -123,10 +115,9 @@ function updateAndDraw() {
 			lines.splice(i, 1);
 		}
 	}
+
 	if (lines.length > 0) {
 		requestAnimationFrame(updateAndDraw);
-	} else {
-		notice.textContent = 'Finished';
 	}
 }
 
