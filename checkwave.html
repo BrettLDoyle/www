@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf8">
+
+<style>
+html, body {
+	overflow: hidden;
+}
+.wrapper {
+	position: absolute;
+	  
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+
+	margin: auto;
+}
+#attribution {
+	position: absolute;
+
+	top: 0;
+	left: 0;
+
+	padding: 5px 10px;
+
+	font-family: system-ui;
+}
+#attribution span {
+	cursor: pointer;
+}
+
+input {
+	position: absolute;
+	will-change: transform;
+}
+input.grow {
+	-webkit-animation: grow 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+	-moz-animation: grow 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+	animation: grow 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@-webkit-keyframes grow {
+	0% {
+		-webkit-transform: scale(1);
+	}
+	30% {
+		-webkit-transform: scale(2.5);
+	}
+	100% {
+		-webkit-transform: scale(1);
+	}
+}
+@-moz-keyframes grow {
+	0% {
+		-moz-transform: scale(1);
+	}
+	30% {
+		-moz-transform: scale(2.5); 
+	}
+	100% {
+		-moz-transform: scale(1); 
+	} 
+}
+@keyframes grow {
+	0% {
+		transform: scale(1); 
+	}
+	30% {
+		transform: scale(2.5); 
+	}
+	100% {
+		transform: scale(1); 
+	} 
+}
+</style>
+</head>
+<body>
+<div id="attribution">
+Modified version of <a href="https://hakim.se/">Hakim El Hattab</a>'s <a href="https://lab.hakim.se/checkwave/">Checkwave</a>.
+<br>
+<span onclick="attribution.parentNode.removeChild(attribution)">✖</span>
+</div>
+<script>
+var checkbox_spacing = Math.min(25,
+	Math.max(20, Math.min(window.innerHeight, window.innerWidth) / 15)
+)
+
+var count_x = Math.round((window.innerWidth - checkbox_spacing * 3) / checkbox_spacing)
+var count_y = Math.round((window.innerHeight - checkbox_spacing * 3) / checkbox_spacing)
+
+var perc_over = Math.sqrt((count_x * count_y) / 550)
+
+if (perc_over > 1) {
+	count_x = Math.floor(count_x / perc_over)
+	count_y = Math.floor(count_y / perc_over)
+}
+
+if (count_x <= 0) {
+	count_x = 1
+}
+if (count_y <= 0) {
+	count_y = 1
+}
+
+var checkboxes = []
+
+var toggle_list = []
+var anim_list = []
+
+var i
+
+var wrapper = document.createElement('div')
+wrapper.className = 'wrapper'
+wrapper.style.width = count_x * checkbox_spacing + 'px'
+wrapper.style.height = count_y * checkbox_spacing + 'px'
+
+let screen_scale = Math.max((count_x * checkbox_spacing) / window.innerWidth, (count_y * checkbox_spacing) / window.innerHeight)
+
+if (screen_scale < 0.6) {
+	wrapper.style.zoom = 0.6 / screen_scale
+}
+
+function doToggleAnimation() {
+	anim_list = toggle_list.splice(0, Math.min(toggle_list.length, 250))
+
+	for (i = 0; i < anim_list.length; i++) {
+		anim_list[i].checked = !anim_list[i].checked
+        anim_list[i].className = ''
+	}
+
+	//When there are to many checkboxs waiting for animation, skip the full animation and just do checking/unchecking
+	toggle_list.length > 1200 ? requestAnimationFrame(doToggleAnimation) : requestAnimationFrame(doAnimPart2)
+}
+
+function doAnimPart2() {
+	for (i = 0; i < anim_list.length; i++) {
+		anim_list[i].offsetWidth
+		anim_list[i].className = 'grow'
+	}
+
+	requestAnimationFrame(doToggleAnimation)
+}
+
+function toggle(center) {
+    center.checked = !center.checked
+
+    for (i = 0; i < checkboxes.length; i++) {
+        setTimeout(
+            checkboxes[i]._add_to_toggle_list,
+            Math.round(
+                Math.sqrt(
+                    (center._x - checkboxes[i]._x) *
+                        (center._x - checkboxes[i]._x) +
+                        (center._y - checkboxes[i]._y) *
+                            (center._y - checkboxes[i]._y)
+                )
+            ) * 1.8
+        )
+    }
+}
+
+for (var x = 0; x < count_x; x++) {
+    for (var y = 0; y < count_y; y++) {
+        let checkbox = document.createElement('input')
+        checkbox.setAttribute('type', 'checkbox')
+
+        checkbox._x = x * checkbox_spacing
+        checkbox._y = y * checkbox_spacing
+
+        checkbox.style.left = checkbox._x + 'px'
+		checkbox.style.top = checkbox._y + 'px'
+
+        checkbox._add_to_toggle_list = toggle_list.push.bind(
+            toggle_list,
+            checkbox
+        )
+
+        checkbox.addEventListener('change', this.toggle.bind(null, checkbox))
+
+        wrapper.appendChild(checkbox)
+        checkboxes.push(checkbox)
+    }
+}
+
+function randomClick() {
+    checkboxes[~~(Math.random() * checkboxes.length - 1)].click()
+
+    setTimeout(randomClick, 350 + Math.random() * 1200)
+}
+
+document.body.appendChild(wrapper)
+
+setTimeout(randomClick, 1000)
+requestAnimationFrame(doToggleAnimation)
+</script>
+</body></html>
