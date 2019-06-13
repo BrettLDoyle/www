@@ -142,7 +142,7 @@ function doAnimPart2() {
 	requestAnimationFrame(doToggleAnimation)
 }
 
-function toggle(center) {
+function beginWave(center) {
     center.checked = !center.checked
 
     for (i = 0; i < checkboxes.length; i++) {
@@ -176,7 +176,7 @@ for (var x = 0; x < count_x; x++) {
             checkbox
         )
 
-        checkbox.addEventListener('change', this.toggle.bind(null, checkbox))
+        checkbox.addEventListener('change', beginWave.bind(null, checkbox))
 
         wrapper.appendChild(checkbox)
         checkboxes.push(checkbox)
