@@ -115,7 +115,7 @@ wrapper.className = 'wrapper'
 wrapper.style.width = count_x * checkbox_spacing + 'px'
 wrapper.style.height = count_y * checkbox_spacing + 'px'
 
-let screen_scale = Math.max((count_x * checkbox_spacing) / window.innerWidth, (count_y * checkbox_spacing) / window.innerHeight)
+var screen_scale = Math.max((count_x * checkbox_spacing) / window.innerWidth, (count_y * checkbox_spacing) / window.innerHeight)
 
 if (screen_scale < 0.6) {
 	wrapper.style.zoom = 0.6 / screen_scale
@@ -162,7 +162,7 @@ function toggle(center) {
 
 for (var x = 0; x < count_x; x++) {
     for (var y = 0; y < count_y; y++) {
-        let checkbox = document.createElement('input')
+        var checkbox = document.createElement('input')
         checkbox.setAttribute('type', 'checkbox')
 
         checkbox._x = x * checkbox_spacing
