@@ -33,7 +33,7 @@ var frame_count = 0
 var options = {
     density: 0.34,
     scale: 5,
-    speed: 0,
+    speed: 10,
 
     mode: 1
 }
@@ -144,9 +144,7 @@ function updateDown() {
         }
     }
 
-    ctx.putImageData(image_data, 0, 0)
-
-    requestAnimationFrame(updateRight)
+    setTimeout(updateRight, options.speed)
 }
 function updateRight() {
     old_grid = [...grid]
@@ -185,9 +183,7 @@ function updateRight() {
         }
     }
 
-    ctx.putImageData(image_data, 0, 0)
-
-    requestAnimationFrame(updateDown)
+    setTimeout(updateDown, options.speed)
 }
 
 if (options.mode == 2) {
@@ -209,7 +205,7 @@ if (options.mode == 2) {
             }
         }
 
-        for (i = pixel_count - 1; i > width; i--) {
+        for (i = pixel_count - 1; i >= width; i--) {
             if (grid[i - width] == 1 && grid[i] == 0) {
                 grid[i - width] = 0
                 grid[i] = 1
@@ -230,7 +226,7 @@ if (options.mode == 2) {
 
         var i
 
-        for (i = pixel_count - 1; i > 0; i--) {
+        for (i = pixel_count - 1; i >= 0; i--) {
             if (i % width == 0) {
                 continue
             }
