@@ -2079,6 +2079,17 @@ loader.load(
         console.error(err)
     }
 )
+
+var planeMat = new THREE.ShadowMaterial({ opacity: 0.3 })
+var planeMesh = new THREE.Mesh(new THREE.PlaneGeometry(6, 8), planeMat)
+planeMesh.rotation.x = -20 * (Math.PI / 180)
+planeMesh.position.y = -1
+planeMesh.position.z = -1
+
+planeMesh.receiveShadow = true
+
+scene.add(planeMesh)
+
 </script>
 </body>
 </html>
