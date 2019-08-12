@@ -1987,9 +1987,14 @@ const material = new THREE.MeshStandardMaterial({
 
 const mainLight = new THREE.DirectionalLight(0xffffff, 0.34)
 {
-    mainLight.position.x = 5
-    mainLight.position.y = 8
+    mainLight.position.x = 3
+    mainLight.position.y = 23
     mainLight.position.z = 20
+
+    mainLight.castShadow = true
+    mainLight.shadow.radius = 3
+    mainLight.shadow.bias = 0.0001
+    mainLight.shadow.mapSize = new THREE.Vector2(2048, 2048)
 
     scene.add(mainLight)
 }
@@ -2007,9 +2012,9 @@ const rimLight = new THREE.RectAreaLight(0xffffff, 12, 22, 78)
     rimLight.position.set(-1, 0, -12)
     rimLight.lookAt(0, 0, 0)
 
-    scene.add(rimLight)
+    //scene.add(rimLight)
 }
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.4)
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.3)
 {
     scene.add(ambientLight)
 }
@@ -2020,15 +2025,19 @@ let obj
 function render() {
     requestAnimationFrame(render)
 
-    mainLight.position.x = Math.sin(Date.now() / 500) * 3 + 3
-    mainLight.position.y = Math.sin(Date.now() / 700) * 4 + 23
+    mainLight.intensity = Math.sin(Date.now() / 500) * 0.05 + 0.34
+    ambientLight.intensity = Math.sin(Date.now() / 700) * 0.03 + 0.3
 
     obj.rotation.y =
         obj.rotation.y * 0.7 +
-        ((window.innerWidth / 2 - mousePosition.x) / window.innerWidth) * 0.2
+        ((window.innerWidth / 2 - mousePosition.x) / window.innerWidth) * 0.6 +
+        Math.cos(Date.now() / 600) * 0.005
+
     obj.rotation.x =
         obj.rotation.x * 0.7 +
-        ((window.innerHeight / 2 - mousePosition.y) / window.innerHeight) * 0.2
+        ((window.innerHeight / 2 - mousePosition.y) / window.innerHeight) *
+            0.6 +
+        Math.cos(Date.now() / 900) * 0.005
 
     renderer.render(scene, camera)
 }
@@ -2043,13 +2052,16 @@ window.addEventListener('touchmove', event => {
 })
 
 loader.load(
-    'head.obj',
+    '/head.obj',
     loadedObj => {
         obj = loadedObj
         obj.scale.x = obj.scale.y = obj.scale.z = 3
 
         obj.traverse(child => {
             if (child instanceof THREE.Mesh) {
+                child.castShadow = true
+                child.receiveShadow = true
+
                 child.material = material
             }
         })
